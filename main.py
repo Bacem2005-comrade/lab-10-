@@ -20,7 +20,7 @@ def speak(text):
 MODEL_PATH = "vosk-model-small-ru-0.22"
 
 if not os.path.exists(MODEL_PATH):
-    speak("Модель Vosk не найдена.")
+    speak("Модель Vosk не найдена. Скачай её с официального сайта Vosk.")
     exit(1)
 
 model = vosk.Model(MODEL_PATH)
@@ -39,11 +39,11 @@ def listen():
             data = q.get()
             if recognizer.AcceptWaveform(data):
                 result = json.loads(recognizer.Result())
-                return result.get("text", "")
+                return result.get("text", "").strip()
 
-# 🌐 Получение праздников
-def get_holidays(country="GB", year=2020):
-    url = f"https://date.nager.at/api/v2/publicholidays/{year}/{country}"
+# 🌐 Получение праздников (фиксированный URL для Австрии, 2025)
+def get_holidays():
+    url = "https://date.nager.at/api/v3/publicholidays/2025/AT"
     try:
         response = requests.get(url)
         response.raise_for_status()
@@ -55,10 +55,8 @@ def get_holidays(country="GB", year=2020):
 
 # 🧠 Главная логика ассистента
 def main():
-    country = "GB"
-    year = 2020
-    speak(f"Загружаю праздники {year} года для страны {country}.")
-    holidays = get_holidays(country, year)
+    speak("Загружаю праздники 2025 года для Австрии.")
+    holidays = get_holidays()
 
     if not holidays:
         return
@@ -78,11 +76,11 @@ def main():
                     f.write(h["localName"] + "\n")
             speak("Список праздников сохранён в файл.")
 
-        elif "даты" in command:
+        elif "подробно" in command:
             with open("holidays_full.txt", "w", encoding="utf-8") as f:
                 for h in holidays:
                     f.write(f'{h["date"]} — {h["localName"]}\n')
-            speak("Даты и названия сохранены.")
+            speak("Подробная информация о праздниках сохранена.")
 
         elif "ближайший" in command:
             today = datetime.date.today()
@@ -104,7 +102,10 @@ def main():
             speak("Команда не распознана. Повтори, пожалуйста.")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        speak("Ассистент завершает работу.")
 
 
 
